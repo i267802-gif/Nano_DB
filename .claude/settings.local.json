@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(g++ -std=c++17 -Iinclude -x c++ - -E)"
-    ]
-  }
-}
