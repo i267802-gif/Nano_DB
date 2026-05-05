@@ -1,0 +1,36 @@
+# Build artifacts
+build/
+*.o
+*.obj
+*.a
+*.lib
+*.exe
+*.out
+test_runner
+gen_tpch
+
+# Engine output
+*.ndb
+*.log
+nanodb_execution.log
+
+# Generated TPC-H data
+data/*.tbl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile.cmake
+
+# Profilers
+callgrind.*
+massif.*
+*.gcda
+*.gcno

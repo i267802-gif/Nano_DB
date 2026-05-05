@@ -1,0 +1,85 @@
+# NanoDB Workload File - 50 SQL-like queries against TPC-H tables.
+# Lines starting with # are comments. Blank lines are ignored.
+# The test runner reads this file in order.
+
+# --- Bulk load TPC-H data ---
+LOAD customer FROM "data/customer.tbl"
+LOAD orders FROM "data/orders.tbl"
+LOAD lineitem FROM "data/lineitem.tbl"
+
+# --- Build AVL indexes used by the optimizer ---
+INDEX customer ON c_custkey
+INDEX orders ON o_orderkey
+INDEX orders ON o_custkey
+INDEX lineitem ON l_orderkey
+
+# --- Simple inserts ---
+INSERT INTO customer VALUES (900001, "Alice Walker", "Addr#1", 5, "11-555-0001", 4500.50, "BUILDING", "vip-a")
+INSERT INTO customer VALUES (900002, "Bob Khan", "Addr#2", 12, "22-555-0002", 750.25, "AUTOMOBILE", "vip-b")
+INSERT INTO customer VALUES (900003, "Carol Singh", "Addr#3", 7, "33-555-0003", -120.00, "MACHINERY", "delq")
+INSERT INTO customer VALUES (900004, "Dan Lee", "Addr#4", 1, "44-555-0004", 9800.99, "BUILDING", "elite")
+INSERT INTO customer VALUES (900005, "Ed Patel", "Addr#5", 9, "55-555-0005", 0.00, "HOUSEHOLD", "zero-bal")
+
+# --- Filtered SELECT queries (Test Case A pattern) ---
+SELECT c_custkey, c_name, c_acctbal FROM customer WHERE c_custkey == 900001
+SELECT * FROM customer WHERE c_acctbal > 9000
+SELECT c_name, c_mktsegment FROM customer WHERE c_mktsegment == "BUILDING"
+SELECT * FROM customer WHERE (c_acctbal > 5000 AND c_mktsegment == "BUILDING") OR c_nationkey == 15
+SELECT c_name FROM customer WHERE c_acctbal > 5000 AND c_acctbal < 7000
+SELECT * FROM customer WHERE c_nationkey == 5
+SELECT c_custkey, c_name FROM customer WHERE c_custkey > 899990
+SELECT * FROM customer WHERE c_acctbal < 0
+SELECT c_name FROM customer WHERE NOT (c_mktsegment == "BUILDING")
+SELECT * FROM customer WHERE (c_nationkey > 10 AND c_nationkey < 15) OR c_acctbal > 9000
+
+# --- Numeric / arithmetic predicates (Test Case F pattern) ---
+SELECT * FROM orders WHERE o_totalprice > 400000
+SELECT * FROM orders WHERE (o_totalprice * 1.5) > 100000 AND (o_custkey % 2 == 0)
+SELECT * FROM orders WHERE ((o_totalprice * 1.5) > 100000 AND (o_custkey % 2 == 0)) OR (o_orderstatus != "O")
+SELECT * FROM orders WHERE o_orderstatus == "F"
+SELECT o_orderkey, o_custkey FROM orders WHERE o_custkey == 900001
+
+# --- Lineitem queries ---
+SELECT l_orderkey, l_quantity FROM lineitem WHERE l_quantity > 45
+SELECT * FROM lineitem WHERE l_returnflag == "R"
+SELECT l_orderkey FROM lineitem WHERE l_extendedprice > 80000 AND l_discount < 0.05
+SELECT l_orderkey, l_quantity FROM lineitem WHERE l_shipmode == "AIR"
+SELECT * FROM lineitem WHERE (l_extendedprice + l_tax) > 90000
+
+# --- Index Optimizer (Test Case B): force scan vs index ---
+BENCH SCAN customer c_custkey 12345
+BENCH INDEX customer c_custkey 12345
+BENCH SCAN customer c_custkey 99
+BENCH INDEX customer c_custkey 99
+BENCH SCAN orders o_orderkey 25000
+BENCH INDEX orders o_orderkey 25000
+
+# --- Join Optimizer (Test Case C): MST routing ---
+SELECT * FROM customer JOIN orders JOIN lineitem
+SELECT * FROM customer JOIN orders
+SELECT * FROM orders JOIN lineitem
+
+# --- Updates including admin priority (Test Case E) ---
+UPDATE customer SET c_acctbal = 7777 WHERE c_custkey == 900002
+ADMIN UPDATE customer SET c_acctbal = 12345 WHERE c_custkey == 900001
+SELECT c_custkey, c_acctbal FROM customer WHERE c_custkey == 900001
+SELECT c_custkey, c_acctbal FROM customer WHERE c_custkey == 900002
+
+# --- Deletions ---
+INSERT INTO customer VALUES (900006, "Temp", "Addr#x", 0, "00-000-0000", 0.00, "FURNITURE", "tmp")
+DELETE FROM customer WHERE c_custkey == 900006
+SELECT * FROM customer WHERE c_custkey == 900006
+
+# --- More compound expressions ---
+SELECT * FROM customer WHERE c_acctbal >= 1000 AND c_acctbal <= 2000 AND c_mktsegment == "AUTOMOBILE"
+SELECT c_name FROM customer WHERE c_acctbal > 8000 OR c_acctbal < -500
+SELECT * FROM orders WHERE o_orderpriority == "1-URGENT" AND o_totalprice > 100000
+
+# --- Range scans for benchmarking the AVL ---
+BENCH SCAN customer c_nationkey 12
+BENCH INDEX customer c_custkey 1
+BENCH INDEX customer c_custkey 50000
+
+# --- Final verification of inserts persisted ---
+SELECT * FROM customer WHERE c_custkey == 900001
+SELECT * FROM customer WHERE c_custkey == 900004
