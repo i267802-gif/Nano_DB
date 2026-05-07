@@ -1,0 +1,241 @@
+[2026-05-07 08:10:05][INFO] [BOOT] NanoDB starting (data=data, queries=queries.txt, log=nanodb_execution.log, buffer=64)
+[2026-05-07 08:10:05][INFO] [DATA] Generating TPC-H subset under data
+[2026-05-07 08:10:06][INFO] [ERR] Missing queries file: queries.txt
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT * FROM customer WHERE (c_acctbal > 5000 AND c_mktsegment == "BUILDING") OR c_nationkey == 15
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_acctbal 5000 > c_mktsegment "BUILDING" == AND c_nationkey 15 == OR
+[2026-05-07 08:10:06][INFO] [BUF] Allocated new page 0 in slot 0
+[2026-05-07 08:10:06][INFO] [CATALOG] Registered table 'customer' (file=data/customer.ndb, rows=0)
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: BENCH SCAN customer c_custkey 12345
+[2026-05-07 08:10:06][INFO] [BENCH] [BENCH SCAN] table=customer col=c_custkey val=12345 matches=0 time=0.000 ms (sequential O(N))
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: BENCH INDEX customer c_custkey 12345
+[2026-05-07 08:10:06][INFO] [BENCH] Building index on customer.c_custkey for benchmark
+[2026-05-07 08:10:06][INFO] [INDEX] Built AVL index on customer.c_custkey, height=0, size=0
+[2026-05-07 08:10:06][INFO] [BENCH] [BENCH INDEX] table=customer col=c_custkey val=12345 matches=0 time=0.000 ms (AVL O(log N))
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT * FROM customer JOIN orders JOIN lineitem
+[2026-05-07 08:10:06][INFO] [BUF] Allocated new page 0 in slot 0
+[2026-05-07 08:10:06][INFO] [CATALOG] Registered table 'orders' (file=data/orders.ndb, rows=0)
+[2026-05-07 08:10:06][INFO] [BUF] Allocated new page 0 in slot 0
+[2026-05-07 08:10:06][INFO] [CATALOG] Registered table 'lineitem' (file=data/lineitem.ndb, rows=0)
+[2026-05-07 08:10:06][INFO] [MST] MST path: customer -> lineitem (w=1.0000) customer -> orders (w=2.0000)
+[2026-05-07 08:10:06][INFO] [INDEX] Built AVL index on orders.o_custkey, height=0, size=0
+[2026-05-07 08:10:06][INFO] [INDEX] Built AVL index on lineitem.l_orderkey, height=0, size=0
+[2026-05-07 08:10:06][INFO] [BUF] Flushed all dirty pages
+[2026-05-07 08:10:06][INFO] [BUF] Resized buffer pool of 'lineitem' to 50 pages
+[2026-05-07 08:10:06][INFO] [BUF] Loaded page 0 into slot 0 (resident 1/50)
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=1): SELECT c_name FROM customer WHERE c_custkey == 1000
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=2): SELECT c_name FROM customer WHERE c_custkey == 1001
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=3): SELECT c_name FROM customer WHERE c_custkey == 1002
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=4): SELECT c_name FROM customer WHERE c_custkey == 1003
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=5): SELECT c_name FROM customer WHERE c_custkey == 1004
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=6): SELECT c_name FROM customer WHERE c_custkey == 1005
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=7): SELECT c_name FROM customer WHERE c_custkey == 1006
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=8): SELECT c_name FROM customer WHERE c_custkey == 1007
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=9): SELECT c_name FROM customer WHERE c_custkey == 1008
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=10): SELECT c_name FROM customer WHERE c_custkey == 1009
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=11): SELECT c_name FROM customer WHERE c_custkey == 1010
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=12): SELECT c_name FROM customer WHERE c_custkey == 1011
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=13): SELECT c_name FROM customer WHERE c_custkey == 1012
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=14): SELECT c_name FROM customer WHERE c_custkey == 1013
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=15): SELECT c_name FROM customer WHERE c_custkey == 1014
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=16): SELECT c_name FROM customer WHERE c_custkey == 1015
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=17): SELECT c_name FROM customer WHERE c_custkey == 1016
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=18): SELECT c_name FROM customer WHERE c_custkey == 1017
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=19): SELECT c_name FROM customer WHERE c_custkey == 1018
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=20): SELECT c_name FROM customer WHERE c_custkey == 1019
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=21): SELECT c_name FROM customer WHERE c_custkey == 1020
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=22): SELECT c_name FROM customer WHERE c_custkey == 1021
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=23): SELECT c_name FROM customer WHERE c_custkey == 1022
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=24): SELECT c_name FROM customer WHERE c_custkey == 1023
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=25): SELECT c_name FROM customer WHERE c_custkey == 1024
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=26): SELECT c_name FROM customer WHERE c_custkey == 1025
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=27): SELECT c_name FROM customer WHERE c_custkey == 1026
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=28): SELECT c_name FROM customer WHERE c_custkey == 1027
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=29): SELECT c_name FROM customer WHERE c_custkey == 1028
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=30): SELECT c_name FROM customer WHERE c_custkey == 1029
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=31): SELECT c_name FROM customer WHERE c_custkey == 1030
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=32): SELECT c_name FROM customer WHERE c_custkey == 1031
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=33): SELECT c_name FROM customer WHERE c_custkey == 1032
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=34): SELECT c_name FROM customer WHERE c_custkey == 1033
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=35): SELECT c_name FROM customer WHERE c_custkey == 1034
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=36): SELECT c_name FROM customer WHERE c_custkey == 1035
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=37): SELECT c_name FROM customer WHERE c_custkey == 1036
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=38): SELECT c_name FROM customer WHERE c_custkey == 1037
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=39): SELECT c_name FROM customer WHERE c_custkey == 1038
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=40): SELECT c_name FROM customer WHERE c_custkey == 1039
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=41): SELECT c_name FROM customer WHERE c_custkey == 1040
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=42): SELECT c_name FROM customer WHERE c_custkey == 1041
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=43): SELECT c_name FROM customer WHERE c_custkey == 1042
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=44): SELECT c_name FROM customer WHERE c_custkey == 1043
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=45): SELECT c_name FROM customer WHERE c_custkey == 1044
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=46): SELECT c_name FROM customer WHERE c_custkey == 1045
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=47): SELECT c_name FROM customer WHERE c_custkey == 1046
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=48): SELECT c_name FROM customer WHERE c_custkey == 1047
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=49): SELECT c_name FROM customer WHERE c_custkey == 1048
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=0, seq=50): SELECT c_name FROM customer WHERE c_custkey == 1049
+[2026-05-07 08:10:06][INFO] [QUEUE] Submitted query (priority=100, seq=51): ADMIN UPDATE customer SET c_acctbal = 99999 WHERE c_custkey == 900001
+[2026-05-07 08:10:06][INFO] [QUEUE] Draining priority queue (51 queued)
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=100 seq=51: ADMIN UPDATE customer SET c_acctbal = 99999 WHERE c_custkey == 900001
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: ADMIN UPDATE customer SET c_acctbal = 99999 WHERE c_custkey == 900001
+[2026-05-07 08:10:06][INFO] [PRIO] Admin-priority directive observed for: ADMIN UPDATE customer SET c_acctbal = 99999 WHERE c_custkey == 900001
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 900001 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=1: SELECT c_name FROM customer WHERE c_custkey == 1000
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1000
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1000 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=2: SELECT c_name FROM customer WHERE c_custkey == 1001
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1001
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1001 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=3: SELECT c_name FROM customer WHERE c_custkey == 1002
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1002
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1002 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=4: SELECT c_name FROM customer WHERE c_custkey == 1003
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1003
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1003 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=5: SELECT c_name FROM customer WHERE c_custkey == 1004
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1004
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1004 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=6: SELECT c_name FROM customer WHERE c_custkey == 1005
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1005
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1005 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=7: SELECT c_name FROM customer WHERE c_custkey == 1006
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1006
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1006 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=8: SELECT c_name FROM customer WHERE c_custkey == 1007
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1007
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1007 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=9: SELECT c_name FROM customer WHERE c_custkey == 1008
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1008
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1008 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=10: SELECT c_name FROM customer WHERE c_custkey == 1009
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1009
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1009 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=11: SELECT c_name FROM customer WHERE c_custkey == 1010
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1010
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1010 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=12: SELECT c_name FROM customer WHERE c_custkey == 1011
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1011
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1011 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=13: SELECT c_name FROM customer WHERE c_custkey == 1012
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1012
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1012 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=14: SELECT c_name FROM customer WHERE c_custkey == 1013
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1013
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1013 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=15: SELECT c_name FROM customer WHERE c_custkey == 1014
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1014
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1014 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=16: SELECT c_name FROM customer WHERE c_custkey == 1015
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1015
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1015 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=17: SELECT c_name FROM customer WHERE c_custkey == 1016
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1016
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1016 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=18: SELECT c_name FROM customer WHERE c_custkey == 1017
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1017
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1017 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=19: SELECT c_name FROM customer WHERE c_custkey == 1018
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1018
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1018 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=20: SELECT c_name FROM customer WHERE c_custkey == 1019
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1019
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1019 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=21: SELECT c_name FROM customer WHERE c_custkey == 1020
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1020
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1020 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=22: SELECT c_name FROM customer WHERE c_custkey == 1021
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1021
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1021 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=23: SELECT c_name FROM customer WHERE c_custkey == 1022
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1022
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1022 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=24: SELECT c_name FROM customer WHERE c_custkey == 1023
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1023
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1023 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=25: SELECT c_name FROM customer WHERE c_custkey == 1024
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1024
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1024 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=26: SELECT c_name FROM customer WHERE c_custkey == 1025
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1025
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1025 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=27: SELECT c_name FROM customer WHERE c_custkey == 1026
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1026
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1026 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=28: SELECT c_name FROM customer WHERE c_custkey == 1027
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1027
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1027 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=29: SELECT c_name FROM customer WHERE c_custkey == 1028
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1028
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1028 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=30: SELECT c_name FROM customer WHERE c_custkey == 1029
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1029
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1029 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=31: SELECT c_name FROM customer WHERE c_custkey == 1030
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1030
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1030 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=32: SELECT c_name FROM customer WHERE c_custkey == 1031
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1031
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1031 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=33: SELECT c_name FROM customer WHERE c_custkey == 1032
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1032
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1032 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=34: SELECT c_name FROM customer WHERE c_custkey == 1033
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1033
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1033 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=35: SELECT c_name FROM customer WHERE c_custkey == 1034
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1034
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1034 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=36: SELECT c_name FROM customer WHERE c_custkey == 1035
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1035
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1035 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=37: SELECT c_name FROM customer WHERE c_custkey == 1036
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1036
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1036 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=38: SELECT c_name FROM customer WHERE c_custkey == 1037
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1037
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1037 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=39: SELECT c_name FROM customer WHERE c_custkey == 1038
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1038
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1038 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=40: SELECT c_name FROM customer WHERE c_custkey == 1039
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1039
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1039 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=41: SELECT c_name FROM customer WHERE c_custkey == 1040
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1040
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1040 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=42: SELECT c_name FROM customer WHERE c_custkey == 1041
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1041
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1041 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=43: SELECT c_name FROM customer WHERE c_custkey == 1042
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1042
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1042 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=44: SELECT c_name FROM customer WHERE c_custkey == 1043
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1043
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1043 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=45: SELECT c_name FROM customer WHERE c_custkey == 1044
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1044
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1044 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=46: SELECT c_name FROM customer WHERE c_custkey == 1045
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1045
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1045 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=47: SELECT c_name FROM customer WHERE c_custkey == 1046
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1046
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1046 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=48: SELECT c_name FROM customer WHERE c_custkey == 1047
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1047
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1047 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=49: SELECT c_name FROM customer WHERE c_custkey == 1048
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1048
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1048 ==
+[2026-05-07 08:10:06][INFO] [QUEUE] Dispatching priority=0 seq=50: SELECT c_name FROM customer WHERE c_custkey == 1049
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_name FROM customer WHERE c_custkey == 1049
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 1049 ==
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT c_custkey, c_acctbal FROM customer WHERE c_custkey == 900001
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: c_custkey 900001 ==
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: SELECT * FROM orders WHERE ((o_totalprice * 1.5) > 100000 AND (o_custkey % 2 == 0)) OR (o_orderstatus != "O")
+[2026-05-07 08:10:06][INFO] [PARSE] Infix WHERE -> Postfix: o_totalprice
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: INSERT INTO customer VALUES (950000, "Persist#0", "AddrP", 0, "99-000-0000", 1000.00, "FURNITURE", "persist-test")
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: INSERT INTO customer VALUES (950001, "Persist#1", "AddrP", 1, "99-000-0000", 1100.00, "FURNITURE", "persist-test")
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: INSERT INTO customer VALUES (950002, "Persist#2", "AddrP", 2, "99-000-0000", 1200.00, "FURNITURE", "persist-test")
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: INSERT INTO customer VALUES (950003, "Persist#3", "AddrP", 3, "99-000-0000", 1300.00, "FURNITURE", "persist-test")
+[2026-05-07 08:10:06][INFO] [EXEC] Executing: INSERT INTO customer VALUES (950004, "Persist#4", "AddrP", 4, "99-000-0000", 1400.00, "FURNITURE", "persist-test")
+[2026-05-07 08:10:06][INFO] [BUF] Flushed all dirty pages
+[2026-05-07 08:10:06][INFO] [BOOT] NanoDB shutting down cleanly
