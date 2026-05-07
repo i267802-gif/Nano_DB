@@ -3,6 +3,8 @@
 
 namespace nanodb {
 
+// Opens the backing file, attaches a buffer pool, counts existing rows,
+// and sets up the current write page (allocating one if the file is empty).
 Table::Table(const String& name, const Schema& schema, const String& filePath, std::size_t bufferPages, Logger* log)
     : name_(name), schema_(schema), disk_(nullptr), buf_(nullptr), log_(log),
       totalRows_(0), indexed_(16), currentWritePage_(0) {
@@ -14,6 +16,7 @@ Table::Table(const String& name, const Schema& schema, const String& filePath, s
     buf_->attach(disk_);
     recountRows();
     if (disk_->pageCount() == 0) {
+        // Empty file: allocate the first page.
         std::uint32_t pid = 0;
         Page* p = buf_->allocateNewPage(&pid);
         currentWritePage_ = pid;
@@ -23,6 +26,7 @@ Table::Table(const String& name, const Schema& schema, const String& filePath, s
     }
 }
 
+// Flushes all dirty pages, destroys all index trees, and releases heap resources.
 Table::~Table() {
     flushAll();
     indexed_.forEach([](const String&, AVLTree<long long, RowLocator>* const& t) { delete t; });
@@ -30,6 +34,7 @@ Table::~Table() {
     delete disk_;
 }
 
+// Scans every page in the disk file to recompute totalRows_.
 void Table::recountRows() {
     totalRows_ = 0;
     std::uint32_t total = disk_->pageCount();
@@ -40,6 +45,8 @@ void Table::recountRows() {
     }
 }
 
+// Tries to append a serialized row to the current write page.
+// If the page is full, allocates a new one and retries.
 bool Table::appendBytes(const unsigned char* rowBuf, std::uint32_t rowLen, RowLocator* outLoc) {
     Page* cur = buf_->fetchPage(currentWritePage_);
     if (!cur) return false;
@@ -48,7 +55,7 @@ bool Table::appendBytes(const unsigned char* rowBuf, std::uint32_t rowLen, RowLo
         if (outLoc) { outLoc->pageId = currentWritePage_; outLoc->slotIdx = slot; }
         return true;
     }
-    // Allocate new page
+    // Current page is full — allocate a new page.
     std::uint32_t newPid = 0;
     Page* np = buf_->allocateNewPage(&newPid);
     if (!np) return false;
@@ -59,6 +66,7 @@ bool Table::appendBytes(const unsigned char* rowBuf, std::uint32_t rowLen, RowLo
     return ok;
 }
 
+// Serializes the row, appends it to storage, and updates all active indexes.
 bool Table::insert(const Row& r) {
     unsigned char tmp[PAGE_SIZE];
     std::size_t w = r.serialize(tmp, PAGE_SIZE, 0);
@@ -66,7 +74,7 @@ bool Table::insert(const Row& r) {
     RowLocator loc;
     if (!appendBytes(tmp, (std::uint32_t)w, &loc)) return false;
     ++totalRows_;
-    // Maintain integer indexes
+    // Maintain integer indexes for every indexed column.
     indexed_.forEach([&](const String& colName, AVLTree<long long, RowLocator>* const& tree) {
         int idx = schema_.indexOf(colName);
         if (idx < 0) return;
@@ -80,14 +88,18 @@ bool Table::insert(const Row& r) {
     return true;
 }
 
+// Builds (or rebuilds) an AVL index on a numeric column for fast lookups.
 bool Table::buildIndex(const String& col) {
     int idx = schema_.indexOf(col);
     if (idx < 0) return false;
+
+    // Drop any pre-existing index on this column.
     AVLTree<long long, RowLocator>** existing = indexed_.find(col);
     if (existing) {
         delete *existing;
         indexed_.erase(col);
     }
+
     AVLTree<long long, RowLocator>* tree = new AVLTree<long long, RowLocator>();
     std::uint32_t total = disk_->pageCount();
     for (std::uint32_t pid = 0; pid < total; ++pid) {
@@ -112,6 +124,7 @@ bool Table::buildIndex(const String& col) {
     return true;
 }
 
+// Returns all row locators matching val in the given indexed column.
 DynArray<RowLocator> Table::indexLookupInt(const String& col, long long val) const {
     DynArray<RowLocator> out;
     AVLTree<long long, RowLocator>* const* t = indexed_.find(col);
@@ -121,6 +134,7 @@ DynArray<RowLocator> Table::indexLookupInt(const String& col, long long val) con
     return out;
 }
 
+// Rebuilds all currently active indexes from scratch (e.g. after bulk inserts).
 void Table::rebuildIndexes() {
     DynArray<String> cols;
     indexed_.forEach([&](const String& k, AVLTree<long long, RowLocator>* const&) {
@@ -129,6 +143,7 @@ void Table::rebuildIndexes() {
     for (std::size_t i = 0; i < cols.size(); ++i) buildIndex(cols[i]);
 }
 
+// Fetches the page for loc and scans slots until the target slot is found.
 bool Table::readRow(const RowLocator& loc, Row* outRow) {
     Page* p = buf_->fetchPage(loc.pageId);
     if (!p) return false;
