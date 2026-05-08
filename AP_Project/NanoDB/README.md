@@ -9,7 +9,7 @@ a Minimum Spanning Tree, indexes integer columns with a self-balancing
 AVL tree, manages a fixed buffer pool with a custom doubly-linked LRU
 list, and serializes pages to disk as raw 4 KB binary blocks.
 
-> **GitHub:** _add your repo URL here_
+> **GitHub:** https://github.com/i267802-gif/Nano_DB
 
 ---
 
