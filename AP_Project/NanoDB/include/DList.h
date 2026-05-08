@@ -10,6 +10,7 @@ namespace nanodb {
 template <typename T>
 class DList {
 public:
+    // Intrusive node holding a value and bidirectional pointers.
     struct Node {
         T value;
         Node* prev;
@@ -18,20 +19,25 @@ public:
         Node(T&& v) : value(std::move(v)), prev(nullptr), next(nullptr) {}
     };
 
+    // Constructs an empty list.
     DList() : head_(nullptr), tail_(nullptr), size_(0) {}
 
+    // Deep-copies all nodes from o in order.
     DList(const DList& o) : head_(nullptr), tail_(nullptr), size_(0) {
         for (Node* n = o.head_; n; n = n->next) push_back(n->value);
     }
 
+    // Transfers ownership of o's nodes; leaves o empty.
     DList(DList&& o) noexcept : head_(o.head_), tail_(o.tail_), size_(o.size_) {
         o.head_ = nullptr;
         o.tail_ = nullptr;
         o.size_ = 0;
     }
 
+    // Destroys all remaining nodes.
     ~DList() { clear(); }
 
+    // Copy-assignment: clears self then copies all nodes from o.
     DList& operator=(const DList& o) {
         if (this == &o) return *this;
         clear();
@@ -39,6 +45,7 @@ public:
         return *this;
     }
 
+    // Move-assignment: steals o's node pointers and leaves o empty.
     DList& operator=(DList&& o) noexcept {
         if (this == &o) return *this;
         clear();
@@ -47,6 +54,7 @@ public:
         return *this;
     }
 
+    // Inserts a new node at the front of the list. Returns the new node.
     Node* push_front(const T& v) {
         Node* n = new Node(v);
         n->next = head_;
@@ -57,6 +65,7 @@ public:
         return n;
     }
 
+    // Appends a new node at the back of the list. Returns the new node.
     Node* push_back(const T& v) {
         Node* n = new Node(v);
         n->prev = tail_;
@@ -67,6 +76,7 @@ public:
         return n;
     }
 
+    // Removes and deletes the front node. No-op if the list is empty.
     void pop_front() {
         if (!head_) return;
         Node* n = head_;
@@ -77,6 +87,7 @@ public:
         --size_;
     }
 
+    // Removes and deletes the back node. No-op if the list is empty.
     void pop_back() {
         if (!tail_) return;
         Node* n = tail_;
@@ -124,6 +135,7 @@ public:
         delete n;
     }
 
+    // Destroys every node and resets the list to empty.
     void clear() {
         Node* n = head_;
         while (n) { Node* nx = n->next; delete n; n = nx; }

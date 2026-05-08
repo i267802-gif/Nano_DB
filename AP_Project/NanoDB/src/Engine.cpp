@@ -9,6 +9,7 @@
 
 namespace nanodb {
 
+// Joins two path segments with a '/' separator when needed.
 static String pathJoin(const String& a, const String& b) {
     String out = a;
     if (!out.empty()) {
@@ -19,6 +20,8 @@ static String pathJoin(const String& a, const String& b) {
     return out;
 }
 
+// Initializes the engine with the given data directory and buffer pool size,
+// then registers the canonical TPC-H schemas (customer, orders, lineitem).
 Engine::Engine(const String& dataDir, std::size_t bufferPagesPerTable)
     : dataDir_(dataDir), bufferPagesPerTable_(bufferPagesPerTable),
       catalog_(16), schemas_(16), submitSeq_(0), log_(&gLogger()) {
@@ -35,15 +38,15 @@ Engine::Engine(const String& dataDir, std::size_t bufferPagesPerTable)
     schemas_.insert("customer", cust);
 
     Schema ord;
-    ord.addColumn("o_orderkey",     DType::INT);
-    ord.addColumn("o_custkey",      DType::INT);
-    ord.addColumn("o_orderstatus",  DType::STRING);
-    ord.addColumn("o_totalprice",   DType::FLOAT);
-    ord.addColumn("o_orderdate",    DType::STRING);
-    ord.addColumn("o_orderpriority",DType::STRING);
-    ord.addColumn("o_clerk",        DType::STRING);
-    ord.addColumn("o_shippriority", DType::INT);
-    ord.addColumn("o_comment",      DType::STRING);
+    ord.addColumn("o_orderkey",      DType::INT);
+    ord.addColumn("o_custkey",       DType::INT);
+    ord.addColumn("o_orderstatus",   DType::STRING);
+    ord.addColumn("o_totalprice",    DType::FLOAT);
+    ord.addColumn("o_orderdate",     DType::STRING);
+    ord.addColumn("o_orderpriority", DType::STRING);
+    ord.addColumn("o_clerk",         DType::STRING);
+    ord.addColumn("o_shippriority",  DType::INT);
+    ord.addColumn("o_comment",       DType::STRING);
     schemas_.insert("orders", ord);
 
     Schema li;
@@ -66,15 +69,20 @@ Engine::Engine(const String& dataDir, std::size_t bufferPagesPerTable)
     schemas_.insert("lineitem", li);
 }
 
+// Deletes all open Table instances managed by the catalog.
 Engine::~Engine() {
     catalog_.forEach([](const String&, Table* const& t) { delete t; });
 }
 
+// Adds or replaces a schema entry. The bufferPages hint is reserved for
+// future per-table pool sizing and is currently unused.
 void Engine::registerSchema(const String& name, const Schema& s, std::size_t bufferPages) {
     schemas_.insert(name, s);
     (void)bufferPages;
 }
 
+// Returns an existing open Table or opens it from the schema registry.
+// Creates the .ndb file if it does not yet exist.
 Table* Engine::ensureTable(const String& name) {
     Table** existing = catalog_.find(name);
     if (existing) return *existing;
@@ -88,30 +96,35 @@ Table* Engine::ensureTable(const String& name) {
     return t;
 }
 
+// Returns the open Table for name, opening it via ensureTable if needed.
 Table* Engine::table(const String& name) {
     Table** t = catalog_.find(name);
     if (t) return *t;
     return ensureTable(name);
 }
 
+// Sums the row counts of all currently open tables.
 long long Engine::totalRowsAll() const {
     long long sum = 0;
     catalog_.forEach([&](const String&, Table* const& t) { sum += (long long)t->rowCount(); });
     return sum;
 }
 
+// Returns the buffer pool eviction count for the named table, or 0 if unknown.
 long long Engine::getEvictionCount(const String& table) const {
     Table* const* tp = catalog_.find(table);
     if (!tp) return 0;
     return (*tp)->bufferPool().stats().evictions;
 }
 
+// Returns the buffer pool page-fault count for the named table, or 0 if unknown.
 long long Engine::getPageFaultCount(const String& table) const {
     Table* const* tp = catalog_.find(table);
     if (!tp) return 0;
     return (*tp)->bufferPool().stats().pageFaults;
 }
 
+// Resizes the buffer pool of the named table to the given number of pages.
 bool Engine::resizeTableBuffer(const String& table, std::size_t pages) {
     Table* t = ensureTable(table);
     if (!t) return false;
@@ -120,18 +133,22 @@ bool Engine::resizeTableBuffer(const String& table, std::size_t pages) {
     return true;
 }
 
+// Resets hit/miss statistics for the named table's buffer pool.
 void Engine::resetTableStats(const String& table) {
     Table* t = ensureTable(table);
     if (!t) return;
     t->bufferPool().resetStats();
 }
 
+// Enqueues sql for later execution with the given priority (higher = sooner).
 void Engine::submit(const String& sql, int priority) {
     queue_.push(ScheduledQuery(priority, ++submitSeq_, sql));
     log_->tag("QUEUE", "Submitted query (priority=%d, seq=%lld): %s",
               priority, submitSeq_, sql.c_str());
 }
 
+// Drains the priority queue, executing every pending query in priority order.
+// Returns the number of queries dispatched.
 long long Engine::drainQueue() {
     long long count = 0;
     log_->tag("QUEUE", "Draining priority queue (%zu queued)", queue_.size());
@@ -148,12 +165,15 @@ long long Engine::drainQueue() {
 
 // --- Helpers ---
 
+// Converts a raw string token to a typed DBValue based on the column's DType.
 static DBValue* makeValue(const String& raw, DType t) {
-    if (t == DType::INT) return new IntValue(raw.toInt());
+    if (t == DType::INT)   return new IntValue(raw.toInt());
     if (t == DType::FLOAT) return new FloatValue(raw.toDouble());
     return new StringValue(raw);
 }
 
+// Parses sql and dispatches to the appropriate exec* handler.
+// Logs parse failures and WHERE postfix for debugging.
 ExecResult Engine::executeImmediate(const String& sql) {
     String err;
     ParsedCommand cmd = CommandParser::parse(sql, &err);
@@ -171,24 +191,25 @@ ExecResult Engine::executeImmediate(const String& sql) {
                   ExpressionParser::postfixToString(cmd.wherePostfix).c_str());
     }
     switch (cmd.kind) {
-        case CmdKind::CREATE_TABLE: return execCreate(cmd);
-        case CmdKind::INSERT:       return execInsert(cmd);
-        case CmdKind::LOAD_TBL:     return execLoad(cmd);
-        case CmdKind::BUILD_INDEX:  return execIndex(cmd);
-        case CmdKind::SELECT:       return execSelect(cmd);
-        case CmdKind::UPDATE:       return execUpdate(cmd);
-        case CmdKind::DELETE_:      return execDelete(cmd);
-        case CmdKind::JOIN:         return execJoin(cmd);
-        case CmdKind::BENCH_SCAN:   return execBenchScan(cmd);
-        case CmdKind::BENCH_INDEX:  return execBenchIndex(cmd);
+        case CmdKind::CREATE_TABLE:   return execCreate(cmd);
+        case CmdKind::INSERT:         return execInsert(cmd);
+        case CmdKind::LOAD_TBL:       return execLoad(cmd);
+        case CmdKind::BUILD_INDEX:    return execIndex(cmd);
+        case CmdKind::SELECT:         return execSelect(cmd);
+        case CmdKind::UPDATE:         return execUpdate(cmd);
+        case CmdKind::DELETE_:        return execDelete(cmd);
+        case CmdKind::JOIN:           return execJoin(cmd);
+        case CmdKind::BENCH_SCAN:     return execBenchScan(cmd);
+        case CmdKind::BENCH_INDEX:    return execBenchIndex(cmd);
         case CmdKind::PRIORITY_FLUSH: { ExecResult r; r.message = "Priority flush noop"; return r; }
-        case CmdKind::SHUTDOWN: { ExecResult r; r.message = "shutdown"; return r; }
-        case CmdKind::REBOOT:   { ExecResult r; r.message = "reboot";   return r; }
-        case CmdKind::HELP:     { ExecResult r; r.message = "NanoDB engine - see README"; return r; }
-        default: { ExecResult r; r.ok = false; r.message = "Unknown command"; return r; }
+        case CmdKind::SHUTDOWN:       { ExecResult r; r.message = "shutdown"; return r; }
+        case CmdKind::REBOOT:         { ExecResult r; r.message = "reboot";   return r; }
+        case CmdKind::HELP:           { ExecResult r; r.message = "NanoDB engine - see README"; return r; }
+        default:                      { ExecResult r; r.ok = false; r.message = "Unknown command"; return r; }
     }
 }
 
+// Registers the schema and opens the table file for a CREATE TABLE statement.
 ExecResult Engine::execCreate(const ParsedCommand& cmd) {
     ExecResult r;
     Schema s;
@@ -200,6 +221,7 @@ ExecResult Engine::execCreate(const ParsedCommand& cmd) {
     return r;
 }
 
+// Validates column count, constructs a Row from the parsed values, and inserts it.
 ExecResult Engine::execInsert(const ParsedCommand& cmd) {
     ExecResult r;
     Table* t = ensureTable(cmd.table);
@@ -224,6 +246,8 @@ ExecResult Engine::execInsert(const ParsedCommand& cmd) {
     return r;
 }
 
+// Reads a TPC-H pipe-delimited .tbl file and bulk-inserts all rows.
+// Pads missing trailing columns with NullValue to tolerate trailing '|'.
 long long Engine::loadTblFile(Table* t, const String& path) {
     std::FILE* f = std::fopen(path.c_str(), "r");
     if (!f) return -1;
@@ -232,14 +256,14 @@ long long Engine::loadTblFile(Table* t, const String& path) {
     const Schema& sch = t->schema();
     std::size_t ncols = sch.size();
     while (std::fgets(line, sizeof(line), f)) {
-        // strip newline
+        // Strip trailing newline characters.
         std::size_t L = std::strlen(line);
         while (L > 0 && (line[L - 1] == '\n' || line[L - 1] == '\r')) line[--L] = '\0';
         if (L == 0) continue;
-        // Split by '|'
+        // Split by '|' and construct one DBValue per column.
         Row row;
         std::size_t ci = 0;
-        std::size_t i = 0;
+        std::size_t i  = 0;
         while (ci < ncols) {
             std::size_t st = i;
             while (i < L && line[i] != '|') ++i;
@@ -249,7 +273,7 @@ long long Engine::loadTblFile(Table* t, const String& path) {
             ++ci;
             if (i < L) ++i;
         }
-        // Pad missing columns with NIL
+        // Pad missing columns with NIL.
         while (row.size() < ncols) row.appendOwning(new NullValue());
         if (t->insert(row)) ++count;
     }
@@ -258,6 +282,7 @@ long long Engine::loadTblFile(Table* t, const String& path) {
     return count;
 }
 
+// Opens the .tbl file at cmd.path and loads it into cmd.table.
 ExecResult Engine::execLoad(const ParsedCommand& cmd) {
     ExecResult r;
     Table* t = ensureTable(cmd.table);
@@ -271,6 +296,7 @@ ExecResult Engine::execLoad(const ParsedCommand& cmd) {
     return r;
 }
 
+// Builds an AVL index on the first column listed in cmd.columns.
 ExecResult Engine::execIndex(const ParsedCommand& cmd) {
     ExecResult r;
     Table* t = ensureTable(cmd.table);
@@ -281,6 +307,7 @@ ExecResult Engine::execIndex(const ParsedCommand& cmd) {
     return r;
 }
 
+// Projects the requested columns from r into res. Uses '*' to emit all columns.
 static void emitRow(ExecResult& res, const Row& r, const Schema& sch, const DynArray<String>& wantCols) {
     Row out;
     if (wantCols.size() == 1 && wantCols[0] == "*") {
@@ -293,12 +320,13 @@ static void emitRow(ExecResult& res, const Row& r, const Schema& sch, const DynA
             int idx = sch.indexOf(wantCols[i]);
             if (res.headers.size() < wantCols.size()) res.headers.push_back(wantCols[i]);
             if (idx < 0) out.appendOwning(new NullValue());
-            else out.appendCopy(*r[(std::size_t)idx]);
+            else         out.appendCopy(*r[(std::size_t)idx]);
         }
     }
     res.rows.push_back(static_cast<Row&&>(out));
 }
 
+// Full table scan with optional WHERE predicate evaluation.
 ExecResult Engine::execSelect(const ParsedCommand& cmd) {
     ExecResult res;
     Table* t = ensureTable(cmd.table);
@@ -321,6 +349,7 @@ ExecResult Engine::execSelect(const ParsedCommand& cmd) {
     return res;
 }
 
+// Scans the table and rewrites cmd.updateCol for every row matching the WHERE clause.
 ExecResult Engine::execUpdate(const ParsedCommand& cmd) {
     ExecResult res;
     Table* t = ensureTable(cmd.table);
@@ -342,6 +371,7 @@ ExecResult Engine::execUpdate(const ParsedCommand& cmd) {
     return res;
 }
 
+// Marks rows matching the WHERE clause as deleted (logical delete).
 ExecResult Engine::execDelete(const ParsedCommand& cmd) {
     ExecResult res;
     Table* t = ensureTable(cmd.table);
@@ -374,21 +404,22 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
         tabs.push_back(t);
     }
 
-    // Build graph
+    // Build graph with one node per table.
     Graph g;
     DynArray<int> nodeIds;
     for (std::size_t i = 0; i < tabs.size(); ++i) nodeIds.push_back(g.addNode(tabs[i]->name()));
 
-    // Add canonical edges where applicable
+    // Locate canonical TPC-H tables by name for weighted edge assignment.
     int idxCust = -1, idxOrd = -1, idxLine = -1;
     for (std::size_t i = 0; i < tabs.size(); ++i) {
-        if (tabs[i]->name() == "customer") idxCust = (int)i;
-        else if (tabs[i]->name() == "orders") idxOrd = (int)i;
+        if      (tabs[i]->name() == "customer") idxCust = (int)i;
+        else if (tabs[i]->name() == "orders")   idxOrd  = (int)i;
         else if (tabs[i]->name() == "lineitem") idxLine = (int)i;
     }
 
     auto sz = [&](int i)->double { return (double)tabs[(std::size_t)i]->rowCount() + 1.0; };
 
+    // Add canonical FK edges; lower weight = preferred join order.
     if (idxCust >= 0 && idxOrd >= 0) {
         double w = sz(idxCust) + sz(idxOrd);
         g.addEdge(nodeIds[idxCust], nodeIds[idxOrd], w, "customer.c_custkey = orders.o_custkey");
@@ -398,14 +429,13 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
         g.addEdge(nodeIds[idxOrd], nodeIds[idxLine], w, "orders.o_orderkey = lineitem.l_orderkey");
     }
     if (idxCust >= 0 && idxLine >= 0) {
-        // Indirect: penalize so MST prefers customer->orders->lineitem
+        // Indirect: penalize so MST prefers customer->orders->lineitem.
         double w = sz(idxCust) * sz(idxLine);
         g.addEdge(nodeIds[idxCust], nodeIds[idxLine], w, "customer x lineitem (cartesian)");
     }
-    // Generic fallback edges between every pair using Cartesian product cost
+    // Generic fallback edges between every pair using Cartesian product cost.
     for (std::size_t i = 0; i < tabs.size(); ++i) {
         for (std::size_t j = i + 1; j < tabs.size(); ++j) {
-            // Avoid duplicate explicit edges
             bool already = false;
             for (std::size_t e = 0; e < g.edgeCount(); ++e) {
                 const Edge& ed = g.edge(e);
@@ -421,7 +451,7 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
 
     DynArray<Edge> mst = g.kruskalMST();
 
-    // Log MST
+    // Log MST join order.
     String pathLog = "MST path:";
     for (std::size_t i = 0; i < mst.size(); ++i) {
         pathLog += " ";
@@ -448,18 +478,14 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
     // 100K-row join is not materialized to avoid massive output.
     if (idxCust >= 0 && idxOrd >= 0 && idxLine >= 0) {
         Table* tc = tabs[idxCust]; Table* to = tabs[idxOrd]; Table* tl = tabs[idxLine];
-        // Build index on orders.o_custkey if not present
-        if (!to->hasIndex("o_custkey")) to->buildIndex("o_custkey");
+        // Build index on orders.o_custkey if not present.
+        if (!to->hasIndex("o_custkey"))  to->buildIndex("o_custkey");
         if (!tl->hasIndex("l_orderkey")) tl->buildIndex("l_orderkey");
         long long emitted = 0;
-        long long limit = 25; // sample print
+        long long limit   = 25; // sample print
         tc->scan([&](const Row& cr, const RowLocator&) {
             long long ck = cr[0]->asInt();
-            // Find orders matching o_custkey == ck
             DynArray<RowLocator> orderLocs;
-            // Index lookup yields exactly one (we stored only the first).
-            // Walk full scan is more correct, but for demo speed use index.
-            // Fallback: index returns 1; we still log it.
             DynArray<RowLocator> primary = to->indexLookupInt("o_custkey", ck);
             for (std::size_t i = 0; i < primary.size(); ++i) orderLocs.push_back(primary[i]);
             for (std::size_t i = 0; i < orderLocs.size(); ++i) {
@@ -472,7 +498,7 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
                     if (!tl->readRow(liLocs[j], &lrow)) continue;
                     if (emitted < limit) {
                         Row out;
-                        for (std::size_t k = 0; k < cr.size(); ++k) out.appendCopy(*cr[k]);
+                        for (std::size_t k = 0; k < cr.size();   ++k) out.appendCopy(*cr[k]);
                         for (std::size_t k = 0; k < orow.size(); ++k) out.appendCopy(*orow[k]);
                         for (std::size_t k = 0; k < lrow.size(); ++k) out.appendCopy(*lrow[k]);
                         res.rows.push_back(static_cast<Row&&>(out));
@@ -485,7 +511,7 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
                     ++emitted;
                 }
             }
-            return emitted < 1000000; // safety
+            return emitted < 1000000; // safety cap
         });
         res.rowsAffected = emitted;
         char buf[160];
@@ -494,8 +520,7 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
         return res;
     }
 
-    // Two-table fallback: execute as nested-loop equi-join when one of the
-    // recognized FK relationships is present.
+    // Two-table fallback: customer <-> orders equi-join.
     if (idxCust >= 0 && idxOrd >= 0 && idxLine < 0) {
         Table* tc2 = tabs[idxCust]; Table* to2 = tabs[idxOrd];
         if (!to2->hasIndex("o_custkey")) to2->buildIndex("o_custkey");
@@ -508,7 +533,7 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
                 if (!to2->readRow(locs[i], &orow)) continue;
                 if (emitted < limit) {
                     Row out;
-                    for (std::size_t k = 0; k < cr.size(); ++k) out.appendCopy(*cr[k]);
+                    for (std::size_t k = 0; k < cr.size();   ++k) out.appendCopy(*cr[k]);
                     for (std::size_t k = 0; k < orow.size(); ++k) out.appendCopy(*orow[k]);
                     res.rows.push_back(static_cast<Row&&>(out));
                     if (res.headers.empty()) {
@@ -526,6 +551,8 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
         res.message = String(buf);
         return res;
     }
+
+    // Two-table fallback: orders <-> lineitem equi-join.
     if (idxOrd >= 0 && idxLine >= 0 && idxCust < 0) {
         Table* to2 = tabs[idxOrd]; Table* tl2 = tabs[idxLine];
         if (!tl2->hasIndex("l_orderkey")) tl2->buildIndex("l_orderkey");
@@ -560,6 +587,8 @@ ExecResult Engine::execJoin(const ParsedCommand& cmd) {
     return res;
 }
 
+// Sequential full-table scan benchmark. Times wall-clock milliseconds for a
+// linear O(N) search and reports match count.
 ExecResult Engine::execBenchScan(const ParsedCommand& cmd) {
     ExecResult res;
     Table* t = ensureTable(cmd.table);
@@ -597,6 +626,8 @@ ExecResult Engine::execBenchScan(const ParsedCommand& cmd) {
     return res;
 }
 
+// AVL index benchmark. Builds the index on demand if absent, then times a
+// single O(log N) lookup and reports match count.
 ExecResult Engine::execBenchIndex(const ParsedCommand& cmd) {
     ExecResult res;
     Table* t = ensureTable(cmd.table);
