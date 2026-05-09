@@ -6,47 +6,48 @@
 
 namespace nanodb {
 
-static char* alloc_buf(std::size_t n) {
-    char* p = new char[n];
-    return p;
-}
+// Minimum heap capacity to allocate so very short strings don't thrash the
+// allocator with 1- and 2-byte blocks.
+static constexpr std::size_t kMinCap = 8;
 
-String::String() : data_(nullptr), len_(0), cap_(0) {
-    data_ = alloc_buf(1);
+String::String() : data_(nullptr), len_(0), cap_(kMinCap) {
+    data_ = new char[kMinCap];
     data_[0] = '\0';
-    cap_ = 1;
 }
 
 String::String(const char* s) : data_(nullptr), len_(0), cap_(0) {
     if (!s) {
-        data_ = alloc_buf(1);
+        cap_ = kMinCap;
+        data_ = new char[cap_];
         data_[0] = '\0';
-        cap_ = 1;
         return;
     }
     len_ = std::strlen(s);
-    cap_ = len_ + 1;
-    data_ = alloc_buf(cap_);
+    cap_ = (len_ + 1 < kMinCap) ? kMinCap : len_ + 1;
+    data_ = new char[cap_];
     std::memcpy(data_, s, len_);
     data_[len_] = '\0';
 }
 
-String::String(const char* s, std::size_t n) : data_(nullptr), len_(n), cap_(n + 1) {
-    data_ = alloc_buf(cap_);
+String::String(const char* s, std::size_t n) : data_(nullptr), len_(n), cap_(0) {
+    cap_ = (n + 1 < kMinCap) ? kMinCap : n + 1;
+    data_ = new char[cap_];
     if (s && n > 0) std::memcpy(data_, s, n);
     data_[n] = '\0';
 }
 
-String::String(const String& other) : data_(nullptr), len_(other.len_), cap_(other.len_ + 1) {
-    data_ = alloc_buf(cap_);
+String::String(const String& other) : data_(nullptr), len_(other.len_), cap_(0) {
+    cap_ = (other.len_ + 1 < kMinCap) ? kMinCap : other.len_ + 1;
+    data_ = new char[cap_];
     if (other.data_) std::memcpy(data_, other.data_, len_);
     data_[len_] = '\0';
 }
 
-String::String(String&& other) noexcept : data_(other.data_), len_(other.len_), cap_(other.cap_) {
+String::String(String&& other) noexcept
+    : data_(other.data_), len_(other.len_), cap_(other.cap_) {
     other.data_ = nullptr;
-    other.len_ = 0;
-    other.cap_ = 0;
+    other.len_  = 0;
+    other.cap_  = 0;
 }
 
 String::~String() {
@@ -57,8 +58,8 @@ String& String::operator=(const String& other) {
     if (this == &other) return *this;
     delete[] data_;
     len_ = other.len_;
-    cap_ = other.len_ + 1;
-    data_ = alloc_buf(cap_);
+    cap_ = (other.len_ + 1 < kMinCap) ? kMinCap : other.len_ + 1;
+    data_ = new char[cap_];
     if (other.data_) std::memcpy(data_, other.data_, len_);
     data_[len_] = '\0';
     return *this;
@@ -67,27 +68,27 @@ String& String::operator=(const String& other) {
 String& String::operator=(String&& other) noexcept {
     if (this == &other) return *this;
     delete[] data_;
-    data_ = other.data_;
-    len_ = other.len_;
-    cap_ = other.cap_;
+    data_      = other.data_;
+    len_       = other.len_;
+    cap_       = other.cap_;
     other.data_ = nullptr;
-    other.len_ = 0;
-    other.cap_ = 0;
+    other.len_  = 0;
+    other.cap_  = 0;
     return *this;
 }
 
 String& String::operator=(const char* s) {
     delete[] data_;
     if (!s) {
-        data_ = alloc_buf(1);
+        cap_ = kMinCap;
+        data_ = new char[cap_];
         data_[0] = '\0';
         len_ = 0;
-        cap_ = 1;
         return *this;
     }
     len_ = std::strlen(s);
-    cap_ = len_ + 1;
-    data_ = alloc_buf(cap_);
+    cap_ = (len_ + 1 < kMinCap) ? kMinCap : len_ + 1;
+    data_ = new char[cap_];
     std::memcpy(data_, s, len_);
     data_[len_] = '\0';
     return *this;
@@ -95,13 +96,14 @@ String& String::operator=(const char* s) {
 
 void String::grow(std::size_t need) {
     if (need <= cap_) return;
-    std::size_t newCap = cap_ ? cap_ * 2 : 8;
+    // Always jump to at least kMinCap; then double until we fit.
+    std::size_t newCap = (cap_ < kMinCap) ? kMinCap : cap_ * 2;
     while (newCap < need) newCap *= 2;
-    char* nd = alloc_buf(newCap);
+    char* nd = new char[newCap];
     if (data_) std::memcpy(nd, data_, len_ + 1);
     delete[] data_;
     data_ = nd;
-    cap_ = newCap;
+    cap_  = newCap;
 }
 
 void String::reserve(std::size_t c) { grow(c); }
@@ -114,10 +116,11 @@ void String::clear() {
 void String::push_back(char c) {
     grow(len_ + 2);
     data_[len_++] = c;
-    data_[len_] = '\0';
+    data_[len_]   = '\0';
 }
 
 String& String::operator+=(const String& rhs) {
+    if (rhs.len_ == 0) return *this;
     grow(len_ + rhs.len_ + 1);
     std::memcpy(data_ + len_, rhs.data_, rhs.len_);
     len_ += rhs.len_;
@@ -128,6 +131,7 @@ String& String::operator+=(const String& rhs) {
 String& String::operator+=(const char* rhs) {
     if (!rhs) return *this;
     std::size_t n = std::strlen(rhs);
+    if (n == 0) return *this;
     grow(len_ + n + 1);
     std::memcpy(data_ + len_, rhs, n);
     len_ += n;
@@ -141,14 +145,17 @@ String& String::operator+=(char c) {
 }
 
 int String::compare(const String& other) const {
+    // Fast path for self-comparison.
+    if (this == &other) return 0;
     return std::strcmp(c_str(), other.c_str());
 }
 
 bool String::startsWith(const char* prefix) const {
     if (!prefix) return true;
     std::size_t n = std::strlen(prefix);
+    if (n == 0) return true;
     if (n > len_) return false;
-    return std::strncmp(c_str(), prefix, n) == 0;
+    return std::memcmp(data_, prefix, n) == 0;
 }
 
 String String::substr(std::size_t pos, std::size_t n) const {
@@ -189,8 +196,15 @@ unsigned long long String::hash() const {
     return h;
 }
 
-bool operator==(const String& a, const String& b) { return a.compare(b) == 0; }
-bool operator!=(const String& a, const String& b) { return a.compare(b) != 0; }
+// Short-circuit on size before doing a full strcmp.
+bool operator==(const String& a, const String& b) {
+    if (a.size() != b.size()) return false;
+    return a.compare(b) == 0;
+}
+bool operator!=(const String& a, const String& b) {
+    if (a.size() != b.size()) return true;
+    return a.compare(b) != 0;
+}
 bool operator<(const String& a, const String& b)  { return a.compare(b) <  0; }
 bool operator>(const String& a, const String& b)  { return a.compare(b) >  0; }
 bool operator<=(const String& a, const String& b) { return a.compare(b) <= 0; }

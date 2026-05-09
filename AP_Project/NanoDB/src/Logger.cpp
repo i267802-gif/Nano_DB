@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <ctime>
+#include <cstring>
 
 namespace nanodb {
 
@@ -35,7 +36,8 @@ static const char* lvlStr(LogLevel l) {
 }
 
 void Logger::log(const String& msg, LogLevel lvl) {
-    char tbuf[64];
+    // Build the timestamp (20 chars max for "YYYY-MM-DD HH:MM:SS").
+    char tbuf[32];
     std::time_t t = std::time(nullptr);
     std::tm* gm = std::localtime(&t);
     if (gm) {
@@ -43,35 +45,47 @@ void Logger::log(const String& msg, LogLevel lvl) {
     } else {
         std::snprintf(tbuf, sizeof(tbuf), "T=%lld", (long long)t);
     }
+
+    // Compose the full log line once, then write it with a single call to
+    // both the file and stdout.  This halves the number of I/O syscalls and
+    // guarantees the file and console output are byte-for-byte identical.
+    char line[2048];
+    std::snprintf(line, sizeof(line), "[%s][%s] %s\n",
+                  tbuf, lvlStr(lvl), msg.c_str());
+
     if (file_) {
-        std::fprintf(file_, "[%s][%s] %s\n", tbuf, lvlStr(lvl), msg.c_str());
+        std::fputs(line, file_);
         std::fflush(file_);
     }
     if (echo_) {
-        std::fprintf(stdout, "[%s][%s] %s\n", tbuf, lvlStr(lvl), msg.c_str());
+        std::fputs(line, stdout);
     }
 }
 
 void Logger::logf(const char* fmt, ...) {
-    char buf[1024];
-    va_list ap; va_start(ap, fmt);
+    char buf[2048];
+    va_list ap;
+    va_start(ap, fmt);
     std::vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
     log(String(buf));
 }
 
 void Logger::tag(const char* category, const String& msg) {
-    char buf[1200];
+    // Compose "[CATEGORY] message" in one shot, then delegate to log().
+    char buf[2048];
     std::snprintf(buf, sizeof(buf), "[%s] %s", category, msg.c_str());
     log(String(buf));
 }
 
 void Logger::tag(const char* category, const char* fmt, ...) {
-    char body[1024];
-    va_list ap; va_start(ap, fmt);
+    char body[2048];
+    va_list ap;
+    va_start(ap, fmt);
     std::vsnprintf(body, sizeof(body), fmt, ap);
     va_end(ap);
-    char buf[1200];
+
+    char buf[2176]; // 2048 body + "[CATEGORY] " prefix headroom
     std::snprintf(buf, sizeof(buf), "[%s] %s", category, body);
     log(String(buf));
 }
